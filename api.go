@@ -46,7 +46,7 @@ func load_data() {
 }
 
 func homeHandler(response http.ResponseWriter, request *http.Request) {
-	htmlFile, error := template.ParseFiles("index.html")
+	htmlFile, error := template.ParseFiles("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/index.html")
 	if error != nil {
 		log.Fatal(error)
 	}
