@@ -5,29 +5,48 @@
     <title>Form API TA2 Concurrente</title>
 </head>
 <body>
+    <form action="http://localhost:9000/">
+        <label for="day">Dia del Nacimiento(1-31):</label><br>
+        <input id="day" type="number" placeholder="Ingrese dia" name="day" min="1" max="31"><br><br>
 
-    <form action="http://localhost:9000/get">
-        <label for="Departamento">Departamento:</label><br>
-        <input type="text" placeholder="Departamento" name="departamento"><br>
+        <label for="month">Mes del Nacimiento:</label><br>
+        <select id="month" name="month">
+            <option selected value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+        </select><br><br>
+
+        <label for="weight">Peso en gramos:</label><br>
+        <input id="weight" type="number" placeholder="Ingrese peso" name="weight" min="0"><br><br>
         
-        <label for="Provincia">Provincia:</label><br>
-        <input type="text" placeholder="Provincia" name="provincia"><br>
+        <label for="edadmad">Edad de la madre:</label><br>
+        <input id="edadmad" type="number" placeholder="Ingrese edad de la madre" name="edadmad" min="0"><br><br>
         
-        <label for="Distrito">Distrito:</label><br>
-        <input type="text" placeholder="Distrito" name="distrito"><br>
-        
-        <label for="Sector">Sector:</label><br>
-        <input type="text" placeholder="Sector" name="sector"><br>
-        
-        <label for="Beneficiario">Beneficiario:</label><br>
-        <input type="text" placeholder="Beneficiario" name="beneficiario"><br>
-        
-        <label for="DNI">DNI:</label><br>
-        <input type="text" placeholder="DNI" name="dni"><br>
+        <label for="totemba">Total de hijos:</label><br>
+        <input id="totemba" type="number" placeholder="Ingrese total de hijos" name="totemba" min="0"><br><br>
 
         <br><br><br>
         <input type="submit" value="Enviar">
     </form>
-
+</body>
+<body>
+    <br>
+    <form action="http://localhost:9000/all">
+        <input type="submit" value="Todos">
+    </form>
+    
+    <br>
+    <form action="http://localhost:9000/credits">
+        <input type="submit" value="Creditos">
+    </form>
 </body>
 </html>

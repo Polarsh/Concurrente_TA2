@@ -3,27 +3,28 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"text/template"
 )
 
-type Shed struct {
-	Department  string `json:"department"`
-	Province    string `json:"province"`
-	District    string `json:"district"`
-	Sector      string `json:"sector"`
-	Beneficiary string `json:"beneficiary"`
-	DNI         string `json:"dni"`
-	Altitude    string `json:"altitude"`
-	Ordinance   string `json:"ordinance"`
+type Baby struct {
+	Sex     string `json:"sex"`
+	Day     string `json:"day"`
+	Month   string `json:"month"`
+	Weight  string `json:"weight"`
+	Edadmad string `json:"edadmad"`
+	Totemba string `json:"totemba"`
 }
 
 //global
-var sheds []Shed
+var babies []Baby
 
 func load_data() {
-	csvFile, _ := http.Get("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/TA2/Dataset/prueba.csv")
+	csvFile, _ := http.Get("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/Dataset/LM2000_v7_Muestra.csv")
 	reader := csv.NewReader(csvFile.Body)
 
 	for {
@@ -33,62 +34,67 @@ func load_data() {
 		} else if error != nil {
 			log.Fatal(error)
 		}
-		sheds = append(sheds, Shed{
-			Department:  line[0],
-			Province:    line[1],
-			District:    line[2],
-			Sector:      line[3],
-			Beneficiary: line[4],
-			DNI:         line[5],
-			Altitude:    line[6],
-			Ordinance:   line[7],
+		babies = append(babies, Baby{
+			Sex:     line[8],
+			Day:     line[9],
+			Month:   line[10],
+			Weight:  line[15],
+			Edadmad: line[23],
+			Totemba: line[38],
 		})
 	}
 }
 
-func solve_list(response http.ResponseWriter, request *http.Request) {
-	log.Println("endpoint /list")
+func homeHandler(response http.ResponseWriter, request *http.Request) {
+	htmlFile, error := template.ParseFiles("index.html")
+	if error != nil {
+		log.Fatal(error)
+	}
+	htmlFile.Execute(response, "")
+}
+
+func allHandler(response http.ResponseWriter, request *http.Request) {
+	log.Println("endpoint /all")
 	//tipo de contenido de rpta
 	response.Header().Set("Content-Type", "application/json")
 	//serializar, codificar el resultado a json
-	jsonBytes, _ := json.MarshalIndent(sheds, "", " ")
+	jsonBytes, _ := json.MarshalIndent(babies, "", " ")
 	io.WriteString(response, string(jsonBytes))
 
 }
 
-func solve_search_dni(response http.ResponseWriter, request *http.Request) {
-	log.Println("endpoint /search_dni")
-	//recuperar parametros
-	dni := request.FormValue("dni")
+func sexHandler(response http.ResponseWriter, request *http.Request) {
+	log.Println("endpoint /sex")
 	//tipo de contenido de rpta
 	response.Header().Set("Content-Type", "application/json")
-	//logica del endpoint
-	for _, shed := range sheds {
-		if shed.DNI == dni {
-			//codificarlo
-			jsonBytes, _ := json.MarshalIndent(shed, "", " ")
-			io.WriteString(response, string(jsonBytes))
-		}
-	}
-}
 
-func solve_search_department(response http.ResponseWriter, request *http.Request) {
-	log.Println("endpoint /search_department")
 	//recuperar parametros
-	depa := request.FormValue("department")
-	//tipo de contenido de rpta
-	response.Header().Set("Content-Type", "application/json")
+	day := request.FormValue("day")
+	month := request.FormValue("month")
+	weight := request.FormValue("weight")
+	edadmad := request.FormValue("edadmad")
+	totemba := request.FormValue("totemba")
+
+	day_float, _ := strconv.ParseFloat(day, 32)
+	month_float, _ := strconv.ParseFloat(month, 32)
+	weight_float, _ := strconv.ParseFloat(weight, 32)
+	edadmad_float, _ := strconv.ParseFloat(edadmad, 32)
+	totemba_float, _ := strconv.ParseFloat(totemba, 32)
+
+	response.Write([]byte(day + month + weight + edadmad + totemba))
+	fmt.Println(day_float, month_float, weight_float, edadmad_float, totemba_float)
 	//logica del endpoint
-	for _, shed := range sheds {
-		if shed.Department == depa {
-			//codificarlo
-			jsonBytes, _ := json.MarshalIndent(shed, "", " ")
-			io.WriteString(response, string(jsonBytes))
-		}
-	}
+
+	//for _, Baby := range babies {
+	//if baby.DNI == dni {
+	//	//codificarlo
+	//	jsonBytes, _ := json.MarshalIndent(baby, "", " ")
+	//	io.WriteString(response, string(jsonBytes))
+	//}
+	//}
 }
 
-func solve_credits(response http.ResponseWriter, request *http.Request) {
+func creditsHandler(response http.ResponseWriter, request *http.Request) {
 	log.Println("endpoint /credits")
 	response.Header().Set("Content-Type", "text/html")
 	io.WriteString(response,
@@ -109,10 +115,10 @@ func solve_credits(response http.ResponseWriter, request *http.Request) {
 
 func handle_request() {
 	//definir endpoints
-	http.HandleFunc("/get/all", solve_list)
-	http.HandleFunc("/get/dni", solve_search_dni)
-	http.HandleFunc("/get/dep", solve_search_department)
-	http.HandleFunc("/credits", solve_credits)
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/all", allHandler)
+	http.HandleFunc("/sex", sexHandler)
+	http.HandleFunc("/credits", creditsHandler)
 
 	//establecer puerto de servicio
 	log.Fatal(http.ListenAndServe(":9000", nil))
