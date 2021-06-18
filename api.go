@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"math"
@@ -13,51 +12,116 @@ import (
 )
 
 type BabyGender struct {
-	Baby_Gender     string `json:"baby_gender"`
-	Euclid_Distance string `json:"euclid_distance"`
+	Baby_Gender     int     `json:"baby_gender"`
+	Euclid_Distance float64 `json:"euclid_distance"`
 }
 
 type Baby struct {
-	Gender  string `json:"gender"`
-	Day     string `json:"day"`
-	Month   string `json:"month"`
-	Weight  string `json:"weight"`
-	Edadmad string `json:"edadmad"`
-	Totemba string `json:"totemba"`
+	Gender  int `json:"gender"`
+	Day     int `json:"day"`
+	Month   int `json:"month"`
+	Weight  int `json:"weight"`
+	Edadmad int `json:"edadmad"`
+	Totemba int `json:"totemba"`
 }
 
 //global
 var babies_gender []BabyGender
 var babies []Baby
 var k int = 7
+var numGoRoutines int = 5
 
 //sort
 type ByEuclid_Distance []BabyGender
 
-func (a ByEuclid_Distance) Len() int      { return len(a) }
-func (a ByEuclid_Distance) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByEuclid_Distance) Less(i, j int) bool {
-	aux1, _ := strconv.ParseFloat(a[i].Euclid_Distance, 32)
-	aux2, _ := strconv.ParseFloat(a[j].Euclid_Distance, 32)
-	return aux1 < aux2
-}
+func (a ByEuclid_Distance) Len() int           { return len(a) }
+func (a ByEuclid_Distance) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByEuclid_Distance) Less(i, j int) bool { return a[i].Euclid_Distance < a[j].Euclid_Distance }
 
 //
 
-func euclid(x1, x2, x3, x4, x5, y1, y2, y3, y4, y5 float64) string {
-	distance := math.Pow(x1-y1, 2) +
-		math.Pow(x2-y2, 2) +
-		math.Pow(x3-y3, 2) +
-		math.Pow(x4-y4, 2) +
-		math.Pow(x5-y5, 2)
-	//raiz
-	distance = math.Sqrt(distance)
-	return strconv.FormatFloat(distance, 'f', 5, 64)
+func knn(x1, x2, x3, x4, x5, first_posi, last_posi int, doneCh chan struct{}) {
+	for i := first_posi; i <= last_posi; i++ {
+		//calculamos la euclediana
+		euclediana := euclid(x1, x2, x3, x4, x5, babies[i].Day, babies[i].Month, babies[i].Weight, babies[i].Edadmad, babies[i].Totemba)
+
+		//obtenemos el genero del bebe del back
+		genero := babies[i].Gender
+
+		//metemos la eucleidana y el genero a un struct
+		babies_gender = append(babies_gender, BabyGender{
+			Baby_Gender:     genero,
+			Euclid_Distance: euclediana})
+	}
+	//doneCh <- struct{}{}
+}
+
+func sorting_ascendent() {
+	for i := 0; i < len(babies_gender); i++ {
+		sort.Sort(ByEuclid_Distance(babies_gender))
+	}
+}
+
+func knn_and_sorting(x1, x2, x3, x4, x5 int) {
+	final := len(babies)
+
+	doneCh := make(chan struct{})
+
+	for i := 0; i <= final; i = i + (final / numGoRoutines) + 1 {
+		salto := i + (final / numGoRoutines)
+		if salto >= final {
+			salto = final - 1
+		}
+		//concurrencia
+		knn(x1, x2, x3, x4, x5, i, salto, doneCh)
+	}
+	//espera que todas las rutinas se terminen
+	//doneChNum := 0
+	//for doneChNum < numGoRoutines {
+	//	<-doneCh
+	//	doneChNum++
+	//}
+	//fmt.Println(doneChNum)
+
+	//ordenamos ascendentemente la distancia
+	sorting_ascendent()
+
+	//solo los interesa los k primeros, asi que cortamos el array
+	babies_gender = babies_gender[:k]
+}
+
+func euclid(x1, x2, x3, x4, x5, y1, y2, y3, y4, y5 int) float64 {
+	distance := math.Pow(float64(x1-y1), 2) +
+		math.Pow(float64(x2-y2), 2) +
+		math.Pow(float64(x3-y3), 2) +
+		math.Pow(float64(x4-y4), 2) +
+		math.Pow(float64(x5-y5), 2)
+
+	return math.Sqrt(distance)
+}
+
+func count_gender() string {
+	Hom := 0
+	var gender string
+	for i := 0; i < k; i++ {
+		//contar cuantos son niños
+		//comparamos 1:hombre 2:mujer
+		if babies_gender[i].Baby_Gender == 1 {
+			Hom++
+		}
+	}
+	if Hom >= k/2+1 {
+		gender = "niño"
+	} else {
+		gender = "niña"
+	}
+	return gender
 }
 
 func load_data() {
 	csvFile, _ := http.Get("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/Dataset/LM2000_v7_Muestra.csv")
 	reader := csv.NewReader(csvFile.Body)
+	defer csvFile.Body.Close()
 	for {
 		line, error := reader.Read()
 		if error == io.EOF {
@@ -65,13 +129,19 @@ func load_data() {
 		} else if error != nil {
 			log.Fatal(error)
 		}
+		gender, _ := strconv.Atoi(line[8])
+		day, _ := strconv.Atoi(line[9])
+		month, _ := strconv.Atoi(line[10])
+		weight, _ := strconv.Atoi(line[15])
+		edadmad, _ := strconv.Atoi(line[23])
+		totemba, _ := strconv.Atoi(line[38])
 		babies = append(babies, Baby{
-			Gender:  line[8],
-			Day:     line[9],
-			Month:   line[10],
-			Weight:  line[15],
-			Edadmad: line[23],
-			Totemba: line[38],
+			Gender:  gender,
+			Day:     day,
+			Month:   month,
+			Weight:  weight,
+			Edadmad: edadmad,
+			Totemba: totemba,
 		})
 	}
 	//ultimo valor reemplaza al primero
@@ -80,78 +150,44 @@ func load_data() {
 	babies = babies[:len(babies)-1]
 }
 
-func allHandler(response http.ResponseWriter, request *http.Request) {
+func allHandler(w http.ResponseWriter, request *http.Request) {
 	log.Println("endpoint /all")
-	response.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	jsonBytes, _ := json.MarshalIndent(babies, "", " ")
-	io.WriteString(response, string(jsonBytes))
+	io.WriteString(w, string(jsonBytes))
 }
 
-func genderHandler(response http.ResponseWriter, request *http.Request) {
+func genderHandler(w http.ResponseWriter, request *http.Request) {
 	log.Println("endpoint /gender")
-	response.Header().Set("Content-Type", "text/html")
-	//response.Header().Set("Content-Type", "application/json")
-	//recuperar parametros
-	day_float, _ := strconv.ParseFloat(request.FormValue("day"), 32)
-	month_float, _ := strconv.ParseFloat(request.FormValue("month"), 32)
-	weight_float, _ := strconv.ParseFloat(request.FormValue("weight"), 32)
-	edadmad_float, _ := strconv.ParseFloat(request.FormValue("edadmad"), 32)
-	totemba_float, _ := strconv.ParseFloat(request.FormValue("totemba"), 32)
-	//inicializamos el json
+	//w.Header().Set("Content-Type", "text/html")
+	//w.Header().Set("Content-Type", "application/json")
+
+	//recuperar parametros del front y lo pasamos a int
+	day_r, _ := strconv.Atoi(request.FormValue("day"))
+	month_r, _ := strconv.Atoi(request.FormValue("month"))
+	weight_r, _ := strconv.Atoi(request.FormValue("weight"))
+	edadmad_r, _ := strconv.Atoi(request.FormValue("edadmad"))
+	totemba_r, _ := strconv.Atoi(request.FormValue("totemba"))
+
+	//knn sacará la euclediana y lo ordenará
+	knn_and_sorting(day_r, month_r, weight_r, edadmad_r, totemba_r)
+	//---------
+
+	//inicializamos el json y guardamos el genero & euclediana
 	var jsonBytes []byte
-	//logica del endpoint
-	for _, baby := range babies {
-		day2_float, _ := strconv.ParseFloat(baby.Day, 32)
-		month2_float, _ := strconv.ParseFloat(baby.Month, 32)
-		weight2_float, _ := strconv.ParseFloat(baby.Weight, 32)
-		edadmad2_float, _ := strconv.ParseFloat(baby.Edadmad, 32)
-		totemba2_float, _ := strconv.ParseFloat(baby.Totemba, 32)
+	jsonBytes, _ = json.MarshalIndent(babies_gender, "", " ")
 
-		//to string
-		euclediana := euclid(day_float, month_float, weight_float, edadmad_float, totemba_float, day2_float, month2_float, weight2_float, edadmad2_float, totemba2_float)
-		genero := baby.Gender
-
-		//añadimos a un struct
-		babies_gender = append(babies_gender, BabyGender{
-			Baby_Gender:     genero,
-			Euclid_Distance: euclediana,
-		})
-		//ordenamos
-		sort.Sort(ByEuclid_Distance(babies_gender))
-
-		//añadimos
-		jsonBytes, _ = json.MarshalIndent(babies_gender, "", " ")
-	}
-	//printf arreglo con todos los niños
-	//io.WriteString(response, string(jsonBytes))
-	println(jsonBytes)
+	//imprime los k vecinos
+	io.WriteString(w, string(jsonBytes))
 	//------------------
-	Hom := 0
-	var jsonBytesVecinos []byte
-	var babies_gender_vecinos []BabyGender
-	for i := 0; i < k; i++ {
-		babies_gender_vecinos = append(babies_gender_vecinos, babies_gender[i])
-		jsonBytesVecinos, _ = json.MarshalIndent(babies_gender_vecinos, "", "  ")
-		//contar cuantos son niños
-		tr, _ := strconv.ParseFloat(babies_gender[i].Baby_Gender, 32)
-		if tr == 1 {
-			Hom++
-		}
-	}
-	var gender string
-	if Hom >= k/2+1 {
-		gender = "niño"
-	} else {
-		gender = "niña"
-	}
-	io.WriteString(response, gender)
-	fmt.Fprintf(response, gender)
+
+	//contamos #niños genero y definimos
+	gender := count_gender()
+	io.WriteString(w, gender)
+
 	//eliminar datos para proximas consultas
-	fmt.Println(jsonBytesVecinos)
 	jsonBytes = nil
-	jsonBytesVecinos = nil
 	babies_gender = nil
-	babies_gender_vecinos = nil
 }
 
 func handle_request() {
@@ -169,8 +205,9 @@ func handle_request() {
 func main() {
 	load_data()
 	handle_request()
-	//8 Implementar el algoritmo indicado de manera eficiente
-	//3 Implementar una API REST en GO que se comunique con la interfaz Web para recibir los parámetros
-	//	de configuración, ejecute el algoritmo implementado y devuelva los resultados obtenidos del algoritmo.
-	//1 Presentación de la documentación completa.
 }
+
+//8 Implementar el algoritmo indicado de manera eficiente
+//3 Implementar una API REST en GO que se comunique con la interfaz Web para recibir los parámetros
+//	de configuración, ejecute el algoritmo implementado y devuelva los resultados obtenidos del algoritmo.
+//1 Presentación de la documentación completa.

@@ -19,26 +19,26 @@
         
         <div id="getgender">
                     
-          <form action="/gender" method="POST">
+          <form action="/gender" method="GET" id="inputForm">
           
-          <h3>Datos del bebé</h2>
+          <h3>Datos de nacimiento del bebé</h2>
             
           <div class="top-row">
 
             <div class="field-wrap">
-              <label for="day"> Dia de nacimiento<span class="req">*</span></label>
+              <label for="day"> Dia (1-31)<span class="req">*</span></label>
               <input id="day" name="day" type="number" required autocomplete="off" min="1" max="31" />
             </div>
         
             <div class="field-wrap">
-              <label for="month"> Mes del nacimiento<span class="req">*</span></label>
+              <label for="month"> Mes (1-12)<span class="req">*</span></label>
               <input id="month" name="month" type="number" required autocomplete="off" min="1" max="12"/>
             </div>
             
           </div>
           
           <div class="field-wrap">
-            <label for="weight"> Peso<span class="req">*</span></label>
+            <label for="weight"> Peso (500-5000)<span class="req">*</span></label>
             <input id="weight" name="weight" type="number"required autocomplete="off" min="500" max="5000"/>
           </div>
 
@@ -46,12 +46,12 @@
 
           <div class="top-row">
             <div class="field-wrap">
-              <label for="edadmad"> Edad madre<span class="req">*</span></label>
+              <label for="edadmad"> Edad madre (18-99)<span class="req">*</span></label>
               <input id="edadmad" name="edadmad" type="number" required autocomplete="off" min="18" max="99"/>
             </div>
         
             <div class="field-wrap">
-              <label for="totemba"> Total de hijos<span class="req">*</span></label>
+              <label for="totemba"> Total de hijos (0-20)<span class="req">*</span></label>
               <input id="totemba" name="totemba" type="number" required autocomplete="off" min="0" max="20"/>
             </div>
           </div>
@@ -60,15 +60,11 @@
           
           </form>
 
+          <br><br>
           <div class="field-wrap">
-            <div><br><br>
-              <form action="/gender" method="POST">
-                <label for="gender" id="gender" name="gender">El bebe es: </label>
-                <output id="gender" name="gender"></output>
-              </form>
-            </div>
+            <div id="gender">  </div>
           </div>
-            
+             
 
         </div>
         
@@ -76,7 +72,7 @@
           <h1>Admin Tools!</h1>
           <h1>U201723059</h1>
           
-          <form action="/all" method="POST">                      
+          <form action="/all" method="GET">                      
           <button class="button button-block"/>Get All!</button>          
           </form>
 

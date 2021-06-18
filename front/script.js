@@ -41,3 +41,32 @@ $('.tab a').on('click', function (e) {
   $(target).fadeIn(600);
   
 });
+
+///
+`
+const url = "http://localhost:9000"
+
+var inputForm = document.getElementById("inputForm")
+
+inputForm.addEventListener("submit", (e)=>{
+  
+  //prevent auto submission
+  e.preventDefault()
+  
+  const formdata = new FormData(inputForm)
+  fetch(url,{    
+    method:"POST",
+    body:formdata,
+  }).then(
+    response => response.text()
+  ).then(
+    (data) => {console.log(data);document.getElementById("gender").innerHTML=data}
+  ).catch(
+    error => console.error(error)
+    )
+}
+      
+)
+
+`
+    
