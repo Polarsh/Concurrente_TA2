@@ -7,7 +7,6 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"sort"
 	"strconv"
 )
 
@@ -31,13 +30,6 @@ var babies []Baby
 var k int = 7
 var numGoRoutines int = 5
 
-//sort
-type ByEuclid_Distance []BabyGender
-
-func (a ByEuclid_Distance) Len() int           { return len(a) }
-func (a ByEuclid_Distance) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByEuclid_Distance) Less(i, j int) bool { return a[i].Euclid_Distance < a[j].Euclid_Distance }
-
 //
 
 func knn(x1, x2, x3, x4, x5, first_posi, last_posi int, doneCh chan struct{}) {
@@ -57,9 +49,28 @@ func knn(x1, x2, x3, x4, x5, first_posi, last_posi int, doneCh chan struct{}) {
 }
 
 func sorting_ascendent() {
-	for i := 0; i < len(babies_gender); i++ {
-		sort.Sort(ByEuclid_Distance(babies_gender))
+	var min float64
+	var location int
+
+	for i := 0; i < k; i++ {
+		for j := i; j < len(babies_gender); j++ {
+			if j == i {
+				min = babies_gender[j].Euclid_Distance
+			}
+			if min > babies_gender[j].Euclid_Distance {
+				min = babies_gender[j].Euclid_Distance
+				location = j
+			}
+		}
+		dist := babies_gender[i].Euclid_Distance
+		gend := babies_gender[i].Baby_Gender
+
+		babies_gender[i] = babies_gender[location]
+
+		babies_gender[location].Euclid_Distance = dist
+		babies_gender[location].Baby_Gender = gend
 	}
+	babies_gender = babies_gender[:k]
 }
 
 func knn_and_sorting(x1, x2, x3, x4, x5 int) {
@@ -86,8 +97,6 @@ func knn_and_sorting(x1, x2, x3, x4, x5 int) {
 	//ordenamos ascendentemente la distancia
 	sorting_ascendent()
 
-	//solo los interesa los k primeros, asi que cortamos el array
-	babies_gender = babies_gender[:k]
 }
 
 func euclid(x1, x2, x3, x4, x5, y1, y2, y3, y4, y5 int) float64 {
