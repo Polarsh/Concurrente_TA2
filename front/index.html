@@ -19,9 +19,9 @@
         
         <div id="getgender">
                     
-          <form action="/gender" method="GET" id="inputForm">
+          <form action="/gender" method="POST" id="inputForm">
           
-          <h3>Datos de nacimiento del bebé</h2>
+          <h3>Datos de nacimiento del bebé</h3>
             
           <div class="top-row">
 
@@ -56,14 +56,13 @@
             </div>
           </div>
 
+          <br><br>
           <button type="submit" class="button button-block"/>Get Gender</button>
           
           </form>
 
           <br><br>
-          <div class="field-wrap">
-            <div id="gender">  </div>
-          </div>
+            <h1 id="gender">  </h1>
              
 
         </div>
@@ -72,7 +71,7 @@
           <h1>Admin Tools!</h1>
           <h1>U201723059</h1>
           
-          <form action="/all" method="GET">                      
+          <form action="/all" method="POST">                      
           <button class="button button-block"/>Get All!</button>          
           </form>
 

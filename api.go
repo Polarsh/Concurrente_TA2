@@ -45,7 +45,7 @@ func knn(x1, x2, x3, x4, x5, first_posi, last_posi int, doneCh chan struct{}) {
 			Baby_Gender:     genero,
 			Euclid_Distance: euclediana})
 	}
-	//doneCh <- struct{}{}
+	doneCh <- struct{}{}
 }
 
 func sorting_ascendent() {
@@ -76,7 +76,7 @@ func sorting_ascendent() {
 func knn_and_sorting(x1, x2, x3, x4, x5 int) {
 	final := len(babies)
 
-	doneCh := make(chan struct{})
+	doneCh := make(chan struct{}, numGoRoutines)
 
 	for i := 0; i <= final; i = i + (final / numGoRoutines) + 1 {
 		salto := i + (final / numGoRoutines)
@@ -84,15 +84,14 @@ func knn_and_sorting(x1, x2, x3, x4, x5 int) {
 			salto = final - 1
 		}
 		//concurrencia
-		knn(x1, x2, x3, x4, x5, i, salto, doneCh)
+		go knn(x1, x2, x3, x4, x5, i, salto, doneCh)
 	}
 	//espera que todas las rutinas se terminen
-	//doneChNum := 0
-	//for doneChNum < numGoRoutines {
-	//	<-doneCh
-	//	doneChNum++
-	//}
-	//fmt.Println(doneChNum)
+	doneChNum := 0
+	for doneChNum < numGoRoutines {
+		<-doneCh
+		doneChNum++
+	}
 
 	//ordenamos ascendentemente la distancia
 	sorting_ascendent()
@@ -128,7 +127,7 @@ func count_gender() string {
 }
 
 func load_data() {
-	csvFile, _ := http.Get("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/Dataset/LM2000_v7_Muestra.csv")
+	csvFile, _ := http.Get("https://raw.githubusercontent.com/Polarsh/Concurrente_TA2/main/Dataset/LM2000_v7.csv")
 	reader := csv.NewReader(csvFile.Body)
 	defer csvFile.Body.Close()
 	for {
@@ -168,8 +167,6 @@ func allHandler(w http.ResponseWriter, request *http.Request) {
 
 func genderHandler(w http.ResponseWriter, request *http.Request) {
 	log.Println("endpoint /gender")
-	//w.Header().Set("Content-Type", "text/html")
-	//w.Header().Set("Content-Type", "application/json")
 
 	//recuperar parametros del front y lo pasamos a int
 	day_r, _ := strconv.Atoi(request.FormValue("day"))
@@ -182,20 +179,11 @@ func genderHandler(w http.ResponseWriter, request *http.Request) {
 	knn_and_sorting(day_r, month_r, weight_r, edadmad_r, totemba_r)
 	//---------
 
-	//inicializamos el json y guardamos el genero & euclediana
-	var jsonBytes []byte
-	jsonBytes, _ = json.MarshalIndent(babies_gender, "", " ")
-
-	//imprime los k vecinos
-	io.WriteString(w, string(jsonBytes))
-	//------------------
-
 	//contamos #niños genero y definimos
 	gender := count_gender()
-	io.WriteString(w, gender)
+	io.WriteString(w, "El bebe es "+gender)
 
 	//eliminar datos para proximas consultas
-	jsonBytes = nil
 	babies_gender = nil
 }
 
@@ -215,8 +203,3 @@ func main() {
 	load_data()
 	handle_request()
 }
-
-//8 Implementar el algoritmo indicado de manera eficiente
-//3 Implementar una API REST en GO que se comunique con la interfaz Web para recibir los parámetros
-//	de configuración, ejecute el algoritmo implementado y devuelva los resultados obtenidos del algoritmo.
-//1 Presentación de la documentación completa.

@@ -43,8 +43,8 @@ $('.tab a').on('click', function (e) {
 });
 
 ///
-`
-const url = "http://localhost:9000"
+
+const url = "http://localhost:9000/gender"
 
 var inputForm = document.getElementById("inputForm")
 
@@ -68,5 +68,5 @@ inputForm.addEventListener("submit", (e)=>{
       
 )
 
-`
+
     
